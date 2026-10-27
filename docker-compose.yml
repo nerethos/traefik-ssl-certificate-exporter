@@ -7,6 +7,8 @@ services:
       CRON_TIME: "* * * * *"
       CERT_OWNER_ID: "0"
       CERT_GROUP_ID: "1000"
+      CERT_PFX: "false"
+      CERT_PFX_PASSWORD: ""
     volumes:
       - ./traefik/acme.json:/app/traefik/acme.json
       - ./certs:/app/certs
