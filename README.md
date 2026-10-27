@@ -50,7 +50,7 @@ Variables:
 | --owner  | CERT_OWNER_ID | ```0 (root)```          | owner for the extracted cert/keys |
 | --group  | CERT_GROUP_ID | ```0 (root)```          | group for the extracted cert/keys |
 | --pfx    | CERT_PFX      | `false`                 | also export `cert.pfx` (PKCS#12 with key, cert and chain) |
-| --pfx-password | CERT_PFX_PASSWORD | empty           | password for `cert.pfx` |
+| --pfx-password | CERT_PFX_PASSWORD | empty           | password for `cert.pfx`. The CLI also reads `CERT_PFX_PASSWORD`; prefer it over the flag, which is visible in process listings |
 | -        | CRON_TIME     | ```* * * * *```         | cron time for the container to extract certs |
 | -        | ON_START      | `1` (true)              | export certs on start |
 

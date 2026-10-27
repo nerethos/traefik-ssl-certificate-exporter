@@ -33,6 +33,7 @@ For every certificate in every resolver:
 - Files written: `privkey.pem` (0600), `fullchain.pem`, `cert.pem` and `chain.pem` (0644). `cert`/`chain` come from splitting the fullchain at the first `\n-----BEGIN CERTIFICATE-----`.
 - All writes go through `writeIfChanged`. It skips a file whose content is byte-identical, so mtimes stay put for unchanged certs. Otherwise it replaces the file with `ioutil.WriteFile` (truncating) and chowns it to `--owner`/`--group`.
 - With `--pfx`, `cert.pfx` (0600) is also written using go-pkcs12's `LegacyDES` encoder (3DES, readable by OpenSSL 3 without `-legacy`, Windows, Java and macOS). PKCS#12 output is randomised, so `writePfx` keeps the existing file if it decodes with the current password and holds the same cert chain, rather than comparing bytes.
+- The PFX password is bound to the `CERT_PFX_PASSWORD` env var as well as `--pfx-password`, and the flag wins if set. `entrypoint.sh` passes it via env, never argv, and writes `cert-export.sh` under `umask 077`.
 - Any error calls `os.Exit(1)` immediately. Certificates later in the list are not processed.
 
 ## Known quirks

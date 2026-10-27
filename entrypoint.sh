@@ -10,12 +10,19 @@ export CERT_PFX_PASSWORD
 CURRENTDATE=$(date +'%Y-%m-%d %T')
 echo "${CURRENTDATE}: Docker container has been started. You can find the log file at /var/log/cron.log"
 
-# Set up export script (password is shell-escaped as it is baked into the script)
+# Set up export script. Cron jobs don't inherit the container env, so the
+# PFX password is baked in (shell-escaped) and passed via env, not argv.
+# The script is created under umask 077 so the password is never readable by others.
 PFX_PASSWORD_ARG=$(printf '%q' "$CERT_PFX_PASSWORD")
+rm -f /app/cert-export.sh
+(
+umask 077
 cat <<END > /app/cert-export.sh
 #!/usr/bin/env bash
-/app/traefik-ssl-certificate-exporter --source /app/traefik/acme.json --dest /app/certs/ --owner "$CERT_OWNER_ID" --group "$CERT_GROUP_ID" --pfx="$CERT_PFX" --pfx-password=$PFX_PASSWORD_ARG
+export CERT_PFX_PASSWORD=$PFX_PASSWORD_ARG
+/app/traefik-ssl-certificate-exporter --source /app/traefik/acme.json --dest /app/certs/ --owner "$CERT_OWNER_ID" --group "$CERT_GROUP_ID" --pfx="$CERT_PFX"
 END
+)
 chmod 700 /app/cert-export.sh
 
 # Run it now

@@ -26,7 +26,7 @@ func main() {
 	pflag.Int("owner", 0, "owner for the extracted cert/keys")
 	pflag.Int("group", 0, "group for the extracted cert/keys")
 	pflag.Bool("pfx", false, "also export cert.pfx (PKCS#12) containing key, cert and chain")
-	pflag.String("pfx-password", "", "password for the exported cert.pfx")
+	pflag.String("pfx-password", "", "password for the exported cert.pfx (prefer the CERT_PFX_PASSWORD env var, flags are visible in process listings)")
 
 	pflag.String("config", "", "Path to config file")
 
@@ -38,6 +38,7 @@ func main() {
 	pflag.Parse()
 
 	viper.BindPFlags(pflag.CommandLine)
+	viper.BindEnv("pfx-password", "CERT_PFX_PASSWORD")
 	viper.SetConfigFile(viper.GetString("config"))
 
 	viper.ReadInConfig()
