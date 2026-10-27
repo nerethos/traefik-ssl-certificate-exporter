@@ -15,7 +15,7 @@ go vet ./...
 docker build -t traefik-ssl-certificate-exporter .
 ```
 
-- There are no tests. CI (`.github/workflows/go.yml`) only runs `go build` on Go 1.16.5.
+- There are no tests. CI (`.github/workflows/go.yml`) only runs `go build`, using the Go version from `go.mod` (1.27).
 - `traefik/example.acme.json` shows the structure only. Its `certificate`/`key` values are placeholders and are not valid base64, so running the exporter against it fails at the decode step. For an end-to-end run you need a real `acme.json` (gitignored as `traefik/acme.json`).
 
 ## Layout
@@ -32,13 +32,14 @@ For every certificate in every resolver:
 - Output dir is `<dest><domain.main>/`. `*` is replaced by `_`, so wildcards become `_.example.com/`. `dest` is joined by plain string concatenation, so it needs a trailing slash.
 - Files written: `privkey.pem` (0600), `fullchain.pem`, `cert.pem` and `chain.pem` (0644). `cert`/`chain` come from splitting the fullchain at the first `\n-----BEGIN CERTIFICATE-----`.
 - All writes go through `writeIfChanged`. It skips a file whose content is byte-identical, so mtimes stay put for unchanged certs. Otherwise it replaces the file with `ioutil.WriteFile` (truncating) and chowns it to `--owner`/`--group`.
+- With `--pfx`, `cert.pfx` (0600) is also written using go-pkcs12's `LegacyDES` encoder (3DES, readable by OpenSSL 3 without `-legacy`, Windows, Java and macOS). PKCS#12 output is randomised, so `writePfx` keeps the existing file if it decodes with the current password and holds the same cert chain, rather than comparing bytes.
 - Any error calls `os.Exit(1)` immediately. Certificates later in the list are not processed.
 
 ## Known quirks
 
 - `Chown` errors are deliberately ignored. This lets non-root local runs with the default owner/group 0 succeed.
 - Permission modes only apply when a file is created. Existing files keep their mode.
-- `io/ioutil` is used (deprecated, but fine on Go 1.16, which CI and `go.mod` target). Avoid APIs newer than 1.16.
+- `io/ioutil` is used. It is deprecated but still works on Go 1.27, which `go.mod` and CI target.
 
 ## Config surface
 

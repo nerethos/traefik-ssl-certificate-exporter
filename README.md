@@ -49,6 +49,8 @@ Variables:
 | --dest   | -             | ```certs/```            | [Output](#Output) |
 | --owner  | CERT_OWNER_ID | ```0 (root)```          | owner for the extracted cert/keys |
 | --group  | CERT_GROUP_ID | ```0 (root)```          | group for the extracted cert/keys |
+| --pfx    | CERT_PFX      | `false`                 | also export `cert.pfx` (PKCS#12 with key, cert and chain) |
+| --pfx-password | CERT_PFX_PASSWORD | empty           | password for `cert.pfx` |
 | -        | CRON_TIME     | ```* * * * *```         | cron time for the container to extract certs |
 | -        | ON_START      | `1` (true)              | export certs on start |
 
@@ -66,6 +68,7 @@ certs/
         chain.pem
         fullchain.pem
         privkey.pem
+        cert.pfx        (only with --pfx)
     sub.example.com/
         cert.pem
         chain.pem

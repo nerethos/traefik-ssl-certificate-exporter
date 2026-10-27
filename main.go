@@ -2,8 +2,11 @@ package main
 
 import (
 	"bytes"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -12,6 +15,7 @@ import (
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"software.sslmate.com/src/go-pkcs12"
 )
 
 func main() {
@@ -21,6 +25,8 @@ func main() {
 	pflag.String("dest", "certs/", "path to destination where to store certificates")
 	pflag.Int("owner", 0, "owner for the extracted cert/keys")
 	pflag.Int("group", 0, "group for the extracted cert/keys")
+	pflag.Bool("pfx", false, "also export cert.pfx (PKCS#12) containing key, cert and chain")
+	pflag.String("pfx-password", "", "password for the exported cert.pfx")
 
 	pflag.String("config", "", "Path to config file")
 
@@ -108,6 +114,13 @@ func main() {
 				}
 			}
 
+			if viper.GetBool("pfx") {
+				if err := writePfx(certPath+"cert.pfx", privateKey, fullChain, viper.GetString("pfx-password"), ownerId, groupId); err != nil {
+					fmt.Println("Failed to write cert.pfx for ", certificate.Domain.Main, " :", err)
+					os.Exit(1)
+				}
+			}
+
 		}
 	}
 
@@ -129,4 +142,75 @@ func writeIfChanged(path string, data []byte, perm os.FileMode, ownerId, groupId
 	}
 	os.Chown(path, ownerId, groupId)
 	return nil
+}
+
+// writePfx writes key and fullChain as a PKCS#12 bundle to path.
+// PKCS#12 encoding is randomised, so instead of comparing bytes the existing
+// file is kept if it opens with password and holds the same certificates.
+func writePfx(path string, keyPem, fullChainPem []byte, password string, ownerId, groupId int) error {
+	key, err := parsePrivateKey(keyPem)
+	if err != nil {
+		return err
+	}
+
+	var certs []*x509.Certificate
+	for rest := fullChainPem; ; {
+		var block *pem.Block
+		block, rest = pem.Decode(rest)
+		if block == nil {
+			break
+		}
+		if block.Type != "CERTIFICATE" {
+			continue
+		}
+		cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			return err
+		}
+		certs = append(certs, cert)
+	}
+	if len(certs) == 0 {
+		return errors.New("no certificate found in fullchain")
+	}
+
+	if old, err := ioutil.ReadFile(path); err == nil {
+		if _, oldCert, oldCaCerts, err := pkcs12.DecodeChain(old, password); err == nil && sameCerts(append([]*x509.Certificate{oldCert}, oldCaCerts...), certs) {
+			return nil
+		}
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
+	pfx, err := pkcs12.LegacyDES.Encode(key, certs[0], certs[1:], password)
+	if err != nil {
+		return err
+	}
+	return writeIfChanged(path, pfx, 0600, ownerId, groupId)
+}
+
+// parsePrivateKey parses a PEM encoded RSA or EC private key in PKCS#1, SEC 1 or PKCS#8 form.
+func parsePrivateKey(keyPem []byte) (interface{}, error) {
+	block, _ := pem.Decode(keyPem)
+	if block == nil {
+		return nil, errors.New("no PEM block found in private key")
+	}
+	if key, err := x509.ParsePKCS1PrivateKey(block.Bytes); err == nil {
+		return key, nil
+	}
+	if key, err := x509.ParseECPrivateKey(block.Bytes); err == nil {
+		return key, nil
+	}
+	return x509.ParsePKCS8PrivateKey(block.Bytes)
+}
+
+func sameCerts(a, b []*x509.Certificate) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !a[i].Equal(b[i]) {
+			return false
+		}
+	}
+	return true
 }
