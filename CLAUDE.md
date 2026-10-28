@@ -16,6 +16,7 @@ docker build -t traefik-ssl-certificate-exporter .
 ```
 
 - There are no tests. CI (`.github/workflows/go.yml`) only runs `go build`, using the Go version from `go.mod` (1.27).
+- `.github/workflows/docker.yml` builds the image with a matrix on native runners (`ubuntu-24.04` for `linux/amd64`, `ubuntu-24.04-arm` for `linux/arm64`, no QEMU). Each leg pushes by digest, and a `merge` job combines the digests into one multi-arch manifest and pushes it to `ghcr.io/nerethos/traefik-ssl-certificate-exporter`: `latest` from `main`, semver tags from `v*` git tags, plus `sha-*` tags. PRs build without pushing, and `workflow_dispatch` publishes from any branch (tagged with the branch name).
 - `traefik/example.acme.json` shows the structure only. Its `certificate`/`key` values are placeholders and are not valid base64, so running the exporter against it fails at the decode step. For an end-to-end run you need a real `acme.json` (gitignored as `traefik/acme.json`).
 
 ## Layout

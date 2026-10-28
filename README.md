@@ -1,6 +1,6 @@
 # Traefik SSL Certificate Exporter
 [![Go](https://github.com/rafi0101/traefik-ssl-certificate-exporter/actions/workflows/go.yml/badge.svg)](https://github.com/rafi0101/traefik-ssl-certificate-exporter/actions/workflows/go.yml)
-![](https://img.shields.io/docker/cloud/build/rafi0101/traefik-ssl-certificate-exporter.svg)
+[![Docker](https://github.com/nerethos/traefik-ssl-certificate-exporter/actions/workflows/docker.yml/badge.svg)](https://github.com/nerethos/traefik-ssl-certificate-exporter/actions/workflows/docker.yml)
 ![Language](https://img.shields.io/badge/language-Golang-29BEB0.svg)
 [![PRWelcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/rafi0101/traefik-ssl-certificate-exporter/pulls)
 <div align="center">
@@ -37,7 +37,9 @@ go build && ./traefik-ssl-certificate-exporter --source traefik/acme.json --dest
 
 ### Docker:
 
-Docker image: [rafi0101/traefik-ssl-certificate-exporter](https://hub.docker.com/r/rafi0101/traefik-ssl-certificate-exporter)
+Docker image: [ghcr.io/nerethos/traefik-ssl-certificate-exporter](https://github.com/nerethos/traefik-ssl-certificate-exporter/pkgs/container/traefik-ssl-certificate-exporter) (`linux/amd64`, `linux/arm64`)
+
+Tags: `latest` (main), `X.Y.Z` / `X.Y` (from `vX.Y.Z` git tags), `sha-<commit>`
 
 See [docker-compose.yml](docker-compose.yml)
 
